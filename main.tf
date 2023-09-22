@@ -12,12 +12,12 @@ module "openstack" {
   config_git_url = "https://github.com/ComputeCanada/puppet-magic_castle.git"
   config_version = "12.6.2"
 
-  cluster_name = "phoenix"
-  domain       = "calculquebec.cloud"
-  image        = "Rocky-8"
+  cluster_name = "accountdev"
+  domain       = "ace-net.training"
+  image        = "Rocky-8.7-x64-2023-02"
 
   instances = {
-    mgmt   = { type = "p4-6gb", tags = ["puppet", "mgmt", "nfs"], count = 1 }
+    mgmt   = { type = "p8-12gb", tags = ["puppet", "mgmt", "nfs"], count = 1 }
     login  = { type = "p2-3gb", tags = ["login", "public", "proxy"], count = 1 }
     node   = { type = "p2-3gb", tags = ["node"], count = 1 }
   }
@@ -30,15 +30,17 @@ module "openstack" {
 
   volumes = {
     nfs = {
-      home     = { size = 100 }
-      project  = { size = 50 }
-      scratch  = { size = 50 }
+      home     = { size = 10 }
+      project  = { size = 5 }
+      scratch  = { size = 5 }
     }
   }
 
-  public_keys = [file("~/.ssh/id_rsa.pub")]
+  public_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIENpmkSafTLSmnYQ+Ukzog9kqKe0M01/OBi6xdr8ww4K cgeroux@sol","ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFGecKEbI3La0zCxftt0g8wYtiQem7w4wMlD/ppY621q csquires@headcrash.cc.mun.ca"]
 
-  nb_users = 10
+  generate_ssh_key = true
+  
+  nb_users = 1
   # Shared password, randomly chosen if blank
   guest_passwd = ""
 }
@@ -51,16 +53,16 @@ output "public_ip" {
   value = module.openstack.public_ip
 }
 
-## Uncomment to register your domain name with CloudFlare
-# module "dns" {
-#   source           = "./dns/cloudflare"
-#   email            = "you@example.com"
-#   name             = module.openstack.cluster_name
-#   domain           = module.openstack.domain
-#   public_instances = module.openstack.public_instances
-#   ssh_private_key  = module.openstack.ssh_private_key
-#   sudoer_username  = module.openstack.accounts.sudoer.username
-# }
+# Uncomment to register your domain name with CloudFlare
+module "dns" {
+  source           = "./dns/cloudflare"
+  email            = "chris.geroux@ace-net.ca"
+  name             = module.openstack.cluster_name
+  domain           = module.openstack.domain
+   public_instances = module.openstack.public_instances
+  ssh_private_key  = module.openstack.ssh_private_key
+  sudoer_username  = module.openstack.accounts.sudoer.username
+}
 
 ## Uncomment to register your domain name with Google Cloud
 # module "dns" {
@@ -75,6 +77,6 @@ output "public_ip" {
 #   sudoer_username  = module.openstack.accounts.sudoer.username
 # }
 
-# output "hostnames" {
-#   value = module.dns.hostnames
-# }
+output "hostnames" {
+  value = module.dns.hostnames
+}
